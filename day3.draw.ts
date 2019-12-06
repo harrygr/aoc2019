@@ -61,10 +61,13 @@ const toPolyLine = (className: string) => (points: Point[]) =>
 // ---
 
 const parseInput = R.compose(R.filter(Boolean), R.split("\n"), R.toString);
-const [wire1, wire2] = parseInput(fs.readFileSync("day3.input.txt"));
+// const [wire1, wire2] = parseInput(fs.readFileSync("day3.input.txt"));
 
 // const wire1 = "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51";
 // const wire2 = "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7";
+
+const wire1 = "R75,D30,R83,U83,L12,D49,R71,U7,L72";
+const wire2 = "U62,R66,U55,R34,D71,R55,D58,R83";
 const lines1 = toPoints(parseWire(wire1));
 const lines2 = toPoints(parseWire(wire2));
 
