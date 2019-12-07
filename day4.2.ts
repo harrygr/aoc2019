@@ -1,10 +1,16 @@
 import R from "ramda";
-import { isSixDigits, has2AdjacentDigits, digitsNeverDecrease } from "./day4";
+import {
+  isSixDigits,
+  has2AdjacentDigits,
+  digitsNeverDecrease,
+  hasRepeatedDigitsNotPartOfLargerGroup
+} from "./day4";
 
 const meetsCriteria = R.allPass([
   isSixDigits,
   has2AdjacentDigits,
-  digitsNeverDecrease
+  digitsNeverDecrease,
+  hasRepeatedDigitsNotPartOfLargerGroup
 ]);
 
 const [start, fin] = R.map(parseFloat, R.split("-", "147981-691423"));
