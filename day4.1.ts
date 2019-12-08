@@ -9,12 +9,13 @@ const meetsCriteria = R.allPass([
 
 const [start, fin] = R.map(parseFloat, R.split("-", "147981-691423"));
 
-const countPassingValues = R.compose(
-  R.last,
-  R.until(
-    ([n]) => R.lte(fin, n),
-    ([n, count]) => [R.inc(n), meetsCriteria(n) ? R.inc(count) : count]
-  )
-);
+const countPassingValues = (start: number, end: number) =>
+  R.compose(
+    R.last,
+    R.until(
+      ([n]) => R.lte(end, n),
+      ([n, count]) => [R.inc(n), meetsCriteria(n) ? R.inc(count) : count]
+    )
+  )([start, 0]);
 
-console.log(countPassingValues([start, 0]));
+console.log(countPassingValues(start, fin));
