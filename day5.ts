@@ -23,9 +23,6 @@ const getMemoryValue = (mode: Mode): ((k: number, m: number[]) => number) =>
 const indirectInsert = (k: number, v: number, m: Memory) =>
   R.update(lookup(k, m), v, m);
 
-const insertMemoryValue = (mode: Mode) =>
-  mode === 0 ? indirectInsert : R.update;
-
 const runAll = (machine: Machine) => {
   return R.until<Machine, Machine>(
     machine => R.equals(99, lookup(machine.ip, machine.memory)),
@@ -37,33 +34,37 @@ const runStep = (machine: Machine): Machine => {
   const instruction = lookup(machine.ip, machine.memory);
   const opcode = instruction % 100;
   const parameterModes = R.toString(Math.floor(instruction / 100));
-  console.log({ instruction, opcode, parameterModes });
   const [memory, ip] = perform(
     opcode,
     parameterModes,
     machine.ip,
     machine.memory
   );
-  console.log({ memory, ip });
   return { memory, ip };
+};
+
+const getParameterModes = (nParams: number) => (modeCode: string) => {
+  const modes = R.split("", modeCode);
+  return R.reverse(
+    R.map(parseFloat, R.concat(R.repeat("0", nParams - R.length(modes)), modes))
+  ) as Mode[];
 };
 
 const perform = (
   opcode: number,
-  parameterModes: string,
+  modes: string,
   ip: number,
   memory: Memory
 ): [Memory, number] => {
   switch (opcode) {
     case 1: {
-      const modeParam1 = parseFloat(parameterModes[1]) as Mode;
-      const modeParam2 = parseFloat(parameterModes[0]) as Mode;
+      const parameterModes = getParameterModes(3)(modes);
       return [
         indirectInsert(
           ip + 3,
           R.add(
-            getMemoryValue(modeParam1)(ip + 1, memory),
-            getMemoryValue(modeParam2)(ip + 2, memory)
+            getMemoryValue(parameterModes[0])(ip + 1, memory),
+            getMemoryValue(parameterModes[1])(ip + 2, memory)
           ),
           memory
         ),
@@ -72,14 +73,13 @@ const perform = (
     }
 
     case 2: {
-      const modeParam1 = parseFloat(parameterModes[1]) as Mode;
-      const modeParam2 = parseFloat(parameterModes[0]) as Mode;
+      const parameterModes = getParameterModes(3)(modes);
       return [
         indirectInsert(
           ip + 3,
           R.multiply(
-            getMemoryValue(modeParam1)(ip + 1, memory),
-            getMemoryValue(modeParam2)(ip + 2, memory)
+            getMemoryValue(parameterModes[0])(ip + 1, memory),
+            getMemoryValue(parameterModes[1])(ip + 2, memory)
           ),
           memory
         ),
@@ -99,6 +99,7 @@ const perform = (
 
 const program = fs.readFileSync("day5.input.txt").toString();
 // const program = "3,0,4,0,99";
+// const program = "1101,100,-1,4,0";
 
 const mem = R.map(parseFloat, R.split(",", program));
 
@@ -107,4 +108,4 @@ const endstate = runAll({
   ip: 0
 });
 
-console.log(endstate);
+// console.log(endstate);
