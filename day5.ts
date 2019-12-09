@@ -1,5 +1,6 @@
 import R from "ramda";
 import fs from "fs";
+import { Writer, List } from "catling";
 
 type Memory = number[];
 type Mode =
@@ -10,6 +11,8 @@ type Machine = {
   memory: Memory;
   ip: number;
 };
+
+type MachineWriter = Writer<number[], Machine>;
 
 const INPUT = 1;
 
@@ -24,23 +27,24 @@ const indirectInsert = (k: number, v: number, m: Memory) =>
   R.update(lookup(k, m), v, m);
 
 const runAll = (machine: Machine) => {
-  return R.until<Machine, Machine>(
-    machine => R.equals(99, lookup(machine.ip, machine.memory)),
+  const initialMachine = Writer([], machine);
+
+  return R.until(
+    w =>
+      w
+        .map(machine => R.equals(99, lookup(machine.ip, machine.memory)))
+        .value(),
     runStep
-  )(machine);
+  )(initialMachine);
 };
 
-const runStep = (machine: Machine): Machine => {
-  const instruction = lookup(machine.ip, machine.memory);
-  const opcode = instruction % 100;
-  const parameterModes = R.toString(Math.floor(instruction / 100));
-  const [memory, ip] = perform(
-    opcode,
-    parameterModes,
-    machine.ip,
-    machine.memory
-  );
-  return { memory, ip };
+const runStep = (w: MachineWriter): MachineWriter => {
+  return w.flatMap(machine => {
+    const instruction = lookup(machine.ip, machine.memory);
+    const opcode = instruction % 100;
+    const parameterModes = R.toString(Math.floor(instruction / 100));
+    return perform(opcode, parameterModes, machine.ip, machine.memory);
+  });
 };
 
 const getParameterModes = (nParams: number) => (modeCode: string) => {
@@ -55,12 +59,12 @@ const perform = (
   modes: string,
   ip: number,
   memory: Memory
-): [Memory, number] => {
+): MachineWriter => {
   switch (opcode) {
     case 1: {
       const parameterModes = getParameterModes(3)(modes);
-      return [
-        indirectInsert(
+      return Writer([], {
+        memory: indirectInsert(
           ip + 3,
           R.add(
             getMemoryValue(parameterModes[0])(ip + 1, memory),
@@ -68,14 +72,14 @@ const perform = (
           ),
           memory
         ),
-        ip + 4
-      ];
+        ip: ip + 4
+      });
     }
 
     case 2: {
       const parameterModes = getParameterModes(3)(modes);
-      return [
-        indirectInsert(
+      return Writer([], {
+        memory: indirectInsert(
           ip + 3,
           R.multiply(
             getMemoryValue(parameterModes[0])(ip + 1, memory),
@@ -83,14 +87,21 @@ const perform = (
           ),
           memory
         ),
-        ip + 4
-      ];
+        ip: ip + 4
+      });
     }
     case 3:
-      return [indirectInsert(ip + 1, INPUT, memory), ip + 2];
+      return Writer([], {
+        memory: indirectInsert(ip + 1, INPUT, memory),
+        ip: ip + 2
+      });
     case 4:
-      console.log(`OUTPUT:`, lookupIndirect(ip + 1, memory));
-      return [memory, ip + 2];
+      const parameterModes = getParameterModes(1)(modes);
+
+      return Writer([getMemoryValue(parameterModes[0])(ip + 1, memory)], {
+        memory,
+        ip: ip + 2
+      });
 
     default:
       throw new Error(`Invalid opcode: ${opcode}`);
@@ -108,4 +119,4 @@ const endstate = runAll({
   ip: 0
 });
 
-// console.log(endstate);
+console.log(endstate.written());
