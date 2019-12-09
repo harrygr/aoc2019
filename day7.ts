@@ -1,6 +1,6 @@
 import R from "ramda";
 import fs from "fs";
-import { Writer } from "catling";
+import { Writer, Reader } from "catling";
 
 type Memory = number[];
 type Mode =
@@ -13,6 +13,7 @@ type Machine = {
 };
 
 type MachineWriter = Writer<number[], Machine>;
+type RunProgram = (getInput: () => number) => MachineWriter;
 
 const lookup = R.nth;
 
@@ -24,17 +25,28 @@ const getMemoryValue = (mode: Mode): ((k: number, m: number[]) => number) =>
 const indirectInsert = (k: number, v: number, m: Memory) =>
   R.update(lookup(k, m), v, m);
 
-const runProgram = (getInput: () => number) => (machine: Machine) => {
-  const initialMachine = Writer([], machine);
-
-  return R.until(
-    w =>
-      w
-        .map(machine => R.equals(99, lookup(machine.ip, machine.memory)))
-        .value(),
-    (w: MachineWriter) => w.flatMap(perform(getInput))
-  )(initialMachine);
-};
+/**
+ * Initialize the intcode computer with an initial state and return a
+ * `Reader` that requires a input-getter.
+ *
+ * When run returns the final output value from running the program with
+ * the input.
+ * @param initialState
+ * @example
+ * initMachine(initalState).run(() => 1)
+ */
+const initMachine = (initialState: Machine) =>
+  Reader((getInput: () => number) => {
+    return R.until(
+      w =>
+        w
+          .map(machine => R.equals(99, lookup(machine.ip, machine.memory)))
+          .value(),
+      (w: MachineWriter) => w.flatMap(perform(getInput))
+    )(Writer([], initialState));
+  })
+    .map(_ => _.written())
+    .map<number>(R.last);
 
 const getParameterModes = (nParams: number) => (modeCode: string) => {
   const modes = R.split("", modeCode);
@@ -139,13 +151,59 @@ const perform = (getInput: () => number) => ({
   }
 };
 
-const program = fs.readFileSync("day5.input.txt").toString();
+const allPermutations = <T>(tokens: T[], subperms: T[][] = [[]]): T[][] =>
+  R.isEmpty(tokens)
+    ? subperms
+    : (R.addIndex(R.chain)(
+        (token: T, idx) =>
+          allPermutations(
+            R.remove(idx, 1, tokens),
+            R.compose(R.map, R.append)(token)(subperms) as T[][]
+          ),
+        tokens
+      ) as T[][]);
 
-const mem = R.map(parseFloat, R.split(",", program));
+/**
+ * Simulate IO by returning a function that returns
+ * each successive input value each time it's called.
+ * @param inputs A list of inputs to return
+ * @example
+ * const getInput = makeInputGetter([10,20])
+ * getInput() // 10
+ * getInput() // 20
+ * getInput() // undefined
+ */
+const makeInputGetter = (inputs: number[]) => {
+  let counter = 0;
 
-const endstate = runProgram(() => 5)({
-  memory: mem,
+  return () => {
+    const val = inputs[counter];
+    counter = counter + 1;
+    return val;
+  };
+};
+
+const getThrusterValue = (machine: Reader<() => number, number>) =>
+  R.reduce(
+    (prev, phase: number) => machine.run(makeInputGetter([phase, prev])),
+    0
+  );
+
+// const program = "3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0";
+const program = fs.readFileSync("day7.input.txt").toString();
+
+const toMemory = R.compose(R.map(parseFloat), R.split(","));
+
+const programmedMachine = initMachine({
+  memory: toMemory(program),
   ip: 0
 });
 
-console.log(endstate.written());
+const allPossiblePhaseCombos = allPermutations([0, 1, 2, 3, 4]);
+
+const res = R.reduce(
+  (acc, phases) => R.max(acc, getThrusterValue(programmedMachine)(phases)),
+  0,
+  allPossiblePhaseCombos
+);
+console.log(res);

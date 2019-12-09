@@ -32,10 +32,10 @@ buffer-from@^1.0.0:
   resolved "https://registry.yarnpkg.com/buffer-from/-/buffer-from-1.1.1.tgz#32713bc028f75c02fdb710d7c7bcec1f2c6070ef"
   integrity sha512-MQcXEUbCKtEo7bhqEs6560Hyd4XaovZlO/k9V3hjVUF/zwW7KBVdSK4gIt/bzwS9MbR5qob+F5jusZsb0YQK2A==
 
-catling@^2.5.0:
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/catling/-/catling-2.5.0.tgz#2f1b78942382bf2e6f8678db81f65762ce717caf"
-  integrity sha512-fEus/rVYwxLgFp8GCMv+mQt9RWUhZfqIyBDOA+hmlryV9BXYBTX2cYkg3eTmc2k/uYlcoZt6JJBItTGhRH7ZEw==
+catling@^2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/catling/-/catling-2.6.0.tgz#ad99a0598bd2ac834a2a26767c8c095d5dc3e1a6"
+  integrity sha512-CVc9vBfvy4REiwFXErTs7nlPKtEd0WiRpuQQ/O2SCeenkJXJm/kSWHP2ELSsxe21fk67HLkgm3ikvSRhqzP14A==
 
 debug@=3.1.0:
   version "3.1.0"
