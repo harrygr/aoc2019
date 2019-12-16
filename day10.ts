@@ -31,7 +31,13 @@ const toKey = R.join(",");
 const isDifferentPointTo = (p: Point) =>
   R.compose(R.not, R.equals(toKey(p)), toKey);
 
-const getObservableAsteroids = (asteroidList: Point[]) => (p: Point) =>
+/**
+ * Returns a function that takes a point and returns the number of all other
+ * asteroids that are directly observable from the given point
+ *
+ * @example makeAsteroidObserver([[1,0], [2,0]])([0,0]) // 1
+ */
+const makeAsteroidObservableCounter = (asteroidList: Point[]) => (p: Point) =>
   R.compose(
     R.add(0), // for the typechecker
     R.length,
@@ -58,7 +64,7 @@ const m = fs.readFileSync("day10.input.txt").toString();
 
 const asteroidList = R.compose(toAsteriodList, toGrid)(m);
 
-const res = toCountOfObservables(getObservableAsteroids(asteroidList))(
+const res = toCountOfObservables(makeAsteroidObservableCounter(asteroidList))(
   asteroidList
 );
 
